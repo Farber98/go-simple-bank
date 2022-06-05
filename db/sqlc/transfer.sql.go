@@ -10,14 +10,6 @@ import (
 )
 
 const createTransfer = `-- name: CreateTransfer :one
-/* "transfers" (
-  "id" bigserial PRIMARY KEY,
-  "from_account_id" bigint NOT NULL,
-  "to_account_id" bigint NOT NULL,
-  "amount" bigint NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT (now())
-); */
-
 INSERT INTO transfers ( from_account_id, to_account_id,amount ) VALUES ($1, $2,$3) RETURNING id, from_account_id, to_account_id, amount, created_at
 `
 

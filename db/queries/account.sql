@@ -1,13 +1,3 @@
-/* 
-"accounts" (
-  "id" bigserial PRIMARY KEY,
-  "owner" varchar NOT NULL,
-  "balance" bigint NOT NULL,
-  "currency" varchar NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT (now())
-);
- */
-
 -- name: CreateAccount :one
 INSERT INTO accounts ( owner, balance, currency ) VALUES ($1, $2, $3) RETURNING *;
 
