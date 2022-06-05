@@ -1,4 +1,3 @@
-# Run postgres container.
 postgres:
 	docker run --name postgres -e POSTGRES_USER=root -e POSTGRES_PASSWORD=toor -p 5432:5432 -d postgres:alpine
 
@@ -18,7 +17,7 @@ sqlc:
 	sqlc generate
 
 tests:
-	go test -cover -race -v ./db/sqlc
+	go test -cover -race -v -count=1 ./...
 
 .PHONY:
 	postgres createdb dropdb migrateup migratedown
