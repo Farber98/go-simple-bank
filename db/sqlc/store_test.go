@@ -110,7 +110,7 @@ func TestStore(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, updatedToAccount)
 
-		log.Printf(">> AFTER: FROM(%d), TO(%d) ", accountFrom.Balance, accountTo.Balance)
+		log.Printf(">> AFTER: FROM(%d), TO(%d) ", updatedFromAccount.Balance, updatedToAccount.Balance)
 		require.Equal(t, accountFrom.Balance-int64(n)*amount, updatedFromAccount.Balance)
 		require.Equal(t, accountTo.Balance+int64(n)*amount, updatedToAccount.Balance)
 	})
