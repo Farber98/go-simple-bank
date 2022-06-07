@@ -115,4 +115,57 @@ func TestStore(t *testing.T) {
 		require.Equal(t, accountTo.Balance+int64(n)*amount, updatedToAccount.Balance)
 	})
 
+	t.Run("Transfer TX Deadlock", func(t *testing.T) {
+		store := db.NewStore(testDb)
+
+		accountFrom := createRandomAccount(t)
+		accountTo := createRandomAccount(t)
+		log.Printf(">> BEFORE: FROM(%d), TO(%d) ", accountFrom.Balance, accountTo.Balance)
+
+		// run n concurrent transfer transactions
+		n := 10
+		amount := int64(10)
+
+		// Channel to communicate errors to testing function becuase transfer is inside go routine.
+		errs := make(chan error)
+
+		for i := 0; i < n; i++ {
+			fromAccount := accountFrom.ID
+			toAccount := accountTo.ID
+			if i%2 == 0 {
+				fromAccount = accountTo.ID
+				toAccount = accountFrom.ID
+			}
+
+			go func() {
+				_, err := store.TransferTx(context.Background(), db.TransferTxParams{
+					FromAccountId: fromAccount,
+					ToAccountId:   toAccount,
+					Amount:        amount,
+				})
+				errs <- err
+			}()
+		}
+
+		for i := 0; i < n; i++ {
+			err := <-errs
+			require.NoError(t, err)
+
+		}
+
+		//check final updated balances
+		updatedFromAccount, err := testQueries.GetAccount(context.Background(), accountFrom.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, updatedFromAccount)
+
+		updatedToAccount, err := testQueries.GetAccount(context.Background(), accountTo.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, updatedToAccount)
+
+		log.Printf(">> AFTER: FROM(%d), TO(%d) ", updatedFromAccount.Balance, updatedToAccount.Balance)
+		require.Equal(t, accountFrom.Balance, updatedFromAccount.Balance)
+		require.Equal(t, accountTo.Balance, updatedToAccount.Balance)
+
+	})
+
 }
