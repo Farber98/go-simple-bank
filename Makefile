@@ -4,6 +4,9 @@ postgres:
 restartpostgres:
 	docker start postgres
 
+server:
+	go run main.go
+
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root simple-bank
 
@@ -23,4 +26,4 @@ tests:
 	go test -cover -race -v -count=1 ./...
 
 .PHONY:
-	postgres createdb dropdb migrateup migratedown
+	postgres createdb dropdb migrateup migratedown server
