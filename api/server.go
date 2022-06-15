@@ -1,7 +1,10 @@
 package api
 
 import (
+	"fmt"
 	db "go-simple-bank/db/sqlc"
+	"go-simple-bank/token"
+	"go-simple-bank/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -10,27 +13,28 @@ import (
 
 // Server serves HTTP requests for our banking service.
 type Server struct {
-	store  db.Store
-	router *gin.Engine
+	config     util.Config
+	store      db.Store
+	tokenMaker token.Maker
+	router     *gin.Engine
 }
 
-func NewServer(store db.Store) *Server {
-	router := gin.Default()
-	server := &Server{store: store}
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	// Initialize token maker and assign store
+	token, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create Paseto token maker: %v", err)
+	}
+	server := &Server{store: store, tokenMaker: token}
 
 	// Add currency validator
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("currency", validCurrency)
 	}
-	// Add routes
-	router.POST("/accounts", server.createAccount)
-	router.GET("/accounts/:id", server.getAccount)
-	router.GET("/accounts", server.listAccounts)
-	router.POST("/transfers", server.createTransfer)
-	router.POST("/users", server.createUser)
 
-	server.router = router
-	return server
+	server.setupRouter()
+
+	return server, nil
 }
 
 // Start runs the HTTP server on specific address
@@ -41,4 +45,20 @@ func (s *Server) Start(address string) error {
 // errorResponse returns an error as gin.H (JSON)
 func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
+}
+
+// setupRouter wires up the routes for the server
+func (s *Server) setupRouter() {
+	router := gin.Default()
+
+	// Add routes
+	router.POST("/accounts", s.createAccount)
+	router.GET("/accounts/:id", s.getAccount)
+	router.GET("/accounts", s.listAccounts)
+	router.POST("/transfers", s.createTransfer)
+	router.POST("/users", s.createUser)
+	router.POST("/users/login", s.loginUser)
+
+	s.router = router
+
 }
